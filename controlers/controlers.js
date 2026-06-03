@@ -763,8 +763,16 @@ exports.logoutAdmin = async (req, res) => {
         if (refreshToken) {
             await User.findOneAndUpdate({ refreshToken }, { refreshToken: null }); 
         }
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken');
+        res.clearCookie('accessToken',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
+        res.clearCookie('refreshToken',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
         res.status(200).json({ message: 'Вийшли успішно' });
     } catch (error) {
         res.status(500).json({ message: 'Помилка сервера при виході' });
@@ -777,8 +785,16 @@ exports.logoutUser = async (req, res) => {
         if (refreshToken) {
             await User.findOneAndUpdate({ refreshToken }, { refreshToken: null });
         }
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken');
+        res.clearCookie('accessToken',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
+        res.clearCookie('refreshToken',{
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
         res.status(200).json({ message: 'Вийшли успішно' });
     } catch (error) {
         res.status(500).json({ message: 'Помилка сервера при виході' });

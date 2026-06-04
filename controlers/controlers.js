@@ -8,28 +8,26 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-const uploadDir = 'uploads';
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir + '/'); 
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Дозволені тільки зображення!'), false);
-    }
-};
-exports.upload = multer({ storage: storage, fileFilter: fileFilter });
+
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'shop-products',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
+
+exports.upload = multer({ storage: storage });
 
 exports.login = async (req, res) => {
   try {
@@ -135,7 +133,9 @@ exports.createProducts = async (req, res) => {
         let isProduct = await Product.findOne({title: title});
         if(isProduct) return res.status(200).json({ message: "Товар з такою назвою вже існує" });
 
-        const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+        const imageUrl = req.file.path; 
+        
         const newProduct = new Product({
             title, price: Number(price), count: Number(count), description, category, type, imageUrl, date
         });
@@ -156,12 +156,12 @@ exports.deleteProduct = async (req, res) => {
         const product = await Product.findById(id);
         if (!product) return res.status(404).json({ message: 'Товар не знайдено у базі даних' });
 
-        if (product.imageUrl) {
-            const filename = product.imageUrl.split('/').pop(); 
-            const imagePath = path.join(__dirname, '..', 'uploads', filename); 
-            fs.unlink(imagePath, (err) => {
-                if (err) console.error(`Не вдалося видалити файл картинки: ${imagePath}`, err);
-            });
+        if (product.imageUrl && product.imageUrl.includes('cloudinary')) {
+            const urlParts = product.imageUrl.split('/');
+            const folderAndFile = urlParts.slice(-2).join('/');
+            const publicId = folderAndFile.split('.')[0];
+            
+            await cloudinary.uploader.destroy(publicId).catch(err => console.log("Помилка видалення з Cloudinary:", err));
         }
 
         await Product.findByIdAndDelete(id);
@@ -184,19 +184,15 @@ exports.updateProduct = async (req, res) => {
         };
 
         if (req.file) {
-            updatedData.imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+            updatedData.imageUrl = req.file.path;
 
-            if (existingProduct.imageUrl) {
-                const filename = existingProduct.imageUrl.split('/').pop(); 
-                const oldImagePath = path.join(__dirname, '..', 'uploads', filename); 
+    
+            if (existingProduct.imageUrl && existingProduct.imageUrl.includes('cloudinary')) {
+                const urlParts = existingProduct.imageUrl.split('/');
+                const folderAndFile = urlParts.slice(-2).join('/');
+                const publicId = folderAndFile.split('.')[0];
 
-                if (fs.existsSync(oldImagePath)) {
-                    try {
-                        fs.unlinkSync(oldImagePath); 
-                    } catch (err) {
-                        console.error('Не вдалося видалити старий файл:', err);
-                    }
-                } 
+                await cloudinary.uploader.destroy(publicId).catch(err => console.log("Помилка Cloudinary:", err));
             }
         }
 
@@ -709,25 +705,24 @@ exports.deleteType = async (req, res) => {
         const { id } = req.body;
         
         const typeToDelete = await Type.findById(id);
-        if (!typeToDelete) return res.status(404).json({ message: "Тип не знайдено" });
+        if (!typeToDelete) return res.status(404).json({ message: "Категорію не знайдено" });
 
         const productsToDelete = await Product.find({ type: typeToDelete.value });
 
+
         for (let i = 0; i < productsToDelete.length; i++) {
-            if (productsToDelete[i].imageUrl) {
-                const filename = productsToDelete[i].imageUrl.split('/').pop();
-                const imagePath = path.join(__dirname, '..', 'uploads', filename);
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                }
+            if (productsToDelete[i].imageUrl && productsToDelete[i].imageUrl.includes('cloudinary')) {
+                const urlParts = productsToDelete[i].imageUrl.split('/');
+                const folderAndFile = urlParts.slice(-2).join('/');
+                const publicId = folderAndFile.split('.')[0];
+                await cloudinary.uploader.destroy(publicId).catch(err => console.log("Помилка Cloudinary:", err));
             }
         }
 
         await Product.deleteMany({ type: typeToDelete.value });
-
         await Type.findByIdAndDelete(id);
 
-        res.status(200).json({ message: "Тип та всі пов'язані з ним товари успішно видалено!" });
+        res.status(200).json({ message: "Категорію та всі пов'язані з нею товари успішно видалено!" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Помилка при видаленні типу" });

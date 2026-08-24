@@ -1,3 +1,40 @@
+// const express = require('express');
+// const router = express.Router();
+// const adminControlers = require('../controlers/controlers');
+// const authAdmin = require('../middleware/authAdmin');
+// const authUser = require('../middleware/authUser');
+
+// router.get('/getprofil',authAdmin, adminControlers.getProfil);
+// router.get('/getprofiluser', adminControlers.getProfilUser);
+// router.post('/login', adminControlers.login);
+// router.post('/loginUser', adminControlers.loginUser);
+// router.post('/registUser', adminControlers.registUser);
+// router.post('/refresh', adminControlers.refresh);
+// router.put('/updateUser', adminControlers.updateUser);
+// router.post('/getProducts', adminControlers.getProducts);
+// router.post('/getShopProducts', adminControlers.getShopProducts); 
+// router.post('/getUsers', authAdmin, adminControlers.getUsers); 
+// router.post('/getAllOrdersForAdmin', authAdmin, adminControlers.getAllOrdersForAdmin);
+// router.post('/createProducts', authAdmin, adminControlers.upload.single('image'), adminControlers.createProducts);
+// router.put('/updateProduct', authAdmin, adminControlers.upload.single('image'), adminControlers.updateProduct);
+// router.put('/updateRole', authAdmin, adminControlers.updateRole);
+// router.delete('/deleteProduct', authAdmin, adminControlers.deleteProduct);
+// router.put('/updateOrderStatusAdmin', authAdmin, adminControlers.updateOrderStatusAdmin);
+// router.post('/addToCart', authUser, adminControlers.addToCart);
+// router.get('/getCart', authUser, adminControlers.getCart);
+// router.post('/createOrder', authUser, adminControlers.createOrder);
+// router.get('/getOrders', authUser, adminControlers.getOrders);
+// router.put('/updateCartQuantity', authUser, adminControlers.updateCartQuantity);
+// router.post('/removeFromCart', authUser, adminControlers.removeFromCart);
+// router.post('/logoutUser', authUser, adminControlers.logoutUser);
+// router.get('/getTypes', adminControlers.getTypes);
+// router.post('/createType', authAdmin, adminControlers.createType);
+// router.delete('/deleteType', authAdmin, adminControlers.deleteType);
+// router.post('/getTypesPaginated', authAdmin, adminControlers.getTypesPaginated);
+// router.post('/logoutAdmin', authAdmin, adminControlers.logoutAdmin);
+
+// module.exports = router;
+
 const express = require('express');
 const router = express.Router();
 const adminControlers = require('../controlers/controlers');
